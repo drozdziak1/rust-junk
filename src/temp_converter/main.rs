@@ -1,4 +1,9 @@
+mod temperature;
+
 use std::io;
+
+use temperature::{Temperature, TempUnit};
+use temperature::TempUnit::*;
 
 /**
  * A soon-to-be temperature converter
@@ -27,7 +32,7 @@ pub fn main() {
 
     println!("{}, got it!", temp);
 
-    let temp_unit: &str;
+    let temp_unit: TempUnit;
 
     loop {
         let mut unit_str = String::new();
@@ -46,9 +51,9 @@ pub fn main() {
         }
 
         temp_unit = match unit_trimmed.to_uppercase().chars().next() {
-            Some('C') => "Celsius",
-            Some('F') => "Fahrenheit",
-            Some('K') => "Kelvin",
+            Some('C') => Celsius(temp),
+            Some('F') => Fahrenheit(temp),
+            Some('K') => Kelvin(temp),
             None => {
                 println!("You entered an empty string!");
                 continue;
@@ -61,5 +66,5 @@ pub fn main() {
         break;
     }
 
-    println!("About to convert from {} degrees", temp_unit);
+    println!("{:#?}", Temperature::from(temp_unit));
 }
