@@ -1,4 +1,5 @@
 mod temperature;
+mod temperature_tests;
 
 use std::io;
 

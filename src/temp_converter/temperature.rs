@@ -2,6 +2,9 @@
  * The actual conversion part
  */
 
+//use std::cmp::PartialEq;
+
+#[derive(Clone, Copy)]
 pub enum TempUnit {
     Celsius(f64),
     Fahrenheit(f64),
@@ -10,11 +13,11 @@ pub enum TempUnit {
 
 use TempUnit::*;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Temperature {
-    celsius: f64,
-    fahrenheit: f64,
-    kelvin: f64,
+    pub celsius: f64,
+    pub fahrenheit: f64,
+    pub kelvin: f64,
 }
 
 impl From<TempUnit> for Temperature {
@@ -26,9 +29,9 @@ impl From<TempUnit> for Temperature {
                 kelvin: c + 273.0,
             },
             Fahrenheit(f) => Temperature {
-                celsius: (f + 32.0) / (9.0/5.0),
+                celsius: (f - 32.0) / (9.0/5.0),
                 fahrenheit: f,
-                kelvin: (f + 32.0) / (9.0/5.0) + 273.0,
+                kelvin: (f - 32.0) / (9.0/5.0) + 273.0,
             },
             Kelvin(k) => Temperature {
                 celsius: k - 273.0,
