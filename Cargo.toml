@@ -1,6 +1,15 @@
 [package]
-name = "variables"
+name = "rust-junk"
 version = "0.1.0"
 authors = ["Stan Drozd <drozdziak1@gmail.com>"]
 
 [dependencies]
+
+
+[[bin]]
+name = "temp_converter"
+path = "src/temp_converter/main.rs"
+
+[[bin]]
+name = "random_stuff"
+path = "src/random_stuff/main.rs"
