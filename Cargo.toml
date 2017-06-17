@@ -5,6 +5,7 @@ authors = ["Stan Drozd <drozdziak1@gmail.com>"]
 
 [dependencies]
 rand = "*"
+time = "*"
 
 
 [[bin]]
@@ -12,5 +13,5 @@ name = "temp_converter"
 path = "src/temp_converter/main.rs"
 
 [[bin]]
-name = "random_stuff"
-path = "src/random_stuff/main.rs"
+name = "y2sec"
+path = "src/y2sec/main.rs"
