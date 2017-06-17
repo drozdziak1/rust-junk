@@ -15,3 +15,7 @@ path = "src/temp_converter/main.rs"
 [[bin]]
 name = "y2sec"
 path = "src/y2sec/main.rs"
+
+[[bin]]
+name = "ff_stats"
+path = "src/ff_stats/main.rs"
