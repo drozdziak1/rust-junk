@@ -6,6 +6,8 @@ authors = ["Stan Drozd <drozdziak1@gmail.com>"]
 [dependencies]
 rand = "*"
 time = "*"
+rust-crypto = "*"
+base64 = "*"
 
 
 [[bin]]
@@ -19,3 +21,7 @@ path = "src/y2sec/main.rs"
 [[bin]]
 name = "ff_stats"
 path = "src/ff_stats/main.rs"
+
+[[bin]]
+name = "encrypt"
+path = "src/encrypt/main.rs"
