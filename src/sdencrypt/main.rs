@@ -4,26 +4,51 @@ extern crate rpassword;
 
 use crypto::symmetriccipher::*;
 use crypto::aessafe::*;
+use crypto::scrypt;
 use rand::os::OsRng;
 use rand::Rng;
 
 
 //TODO: Chop main into smaller functions
 pub fn main() {
-    let mut os_gen = OsRng::new().expect("Unable to use the OS-provided random number generator");
 
-    let key: [u8; 32] = os_gen.gen();
-
-    let pass: String;
+    let mut pass: String;
     loop {
-        match rpassword::prompt_password_stderr("Choose a password:\t") {
-            Ok(first) => println!("You've entered: {}", first),
+        pass = match rpassword::prompt_password_stderr("Choose a password: ") {
+            Ok(input) => input,
             Err(_) => {
-                println!("Oopsies!");
-                break;
+                println!("Something's wrong with your input. Please try again!");
+                continue;
             }
+        };
+
+        let confirm = match rpassword::prompt_password_stderr("Confirm: ") {
+            Ok(input) => input,
+            Err(_) => {
+                println!("Something's wrong with your input. Please try again!");
+                continue;
+            }
+        };
+
+        if pass == confirm {
+            break;
+        } else {
+            println!("Passwords don't match, please try again!");
         }
     }
+
+    println!(
+        "Generating key with password {}...{}",
+        pass.chars().nth(0).unwrap(),
+        pass.chars().nth(pass.len() - 1).unwrap()
+    );
+
+    // default scrypt params
+    let params = scrypt::ScryptParams::new(14, 8, 1);
+
+    let mut key: [u8; 16] = [0; 16];
+
+    scrypt::scrypt(pass.as_bytes(), b"", &params, &mut key);
 
     let encryptor = AesSafe256Encryptor::new(&key);
     println!("Block size: {}", encryptor.block_size());
@@ -61,4 +86,6 @@ pub fn main() {
     for byte in decrypted.iter() {
         print!("{:02X} ", byte);
     }
+    print!("\n");
+
 }
