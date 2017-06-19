@@ -23,5 +23,5 @@ name = "ff_stats"
 path = "src/ff_stats/main.rs"
 
 [[bin]]
-name = "encrypt"
-path = "src/encrypt/main.rs"
+name = "sdencrypt"
+path = "src/sdencrypt/main.rs"
