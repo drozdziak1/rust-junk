@@ -1,13 +1,29 @@
 extern crate crypto;
 extern crate rand;
+extern crate rpassword;
 
 use crypto::symmetriccipher::*;
 use crypto::aessafe::*;
+use rand::os::OsRng;
 use rand::Rng;
 
+
+//TODO: Chop main into smaller functions
 pub fn main() {
-    let mut rand_gen = rand::thread_rng();
-    let key: [u8; 32] = rand_gen.gen();
+    let mut os_gen = OsRng::new().expect("Unable to use the OS-provided random number generator");
+
+    let key: [u8; 32] = os_gen.gen();
+
+    let pass: String;
+    loop {
+        match rpassword::prompt_password_stderr("Choose a password:\t") {
+            Ok(first) => println!("You've entered: {}", first),
+            Err(_) => {
+                println!("Oopsies!");
+                break;
+            }
+        }
+    }
 
     let encryptor = AesSafe256Encryptor::new(&key);
     println!("Block size: {}", encryptor.block_size());

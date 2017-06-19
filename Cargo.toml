@@ -4,10 +4,11 @@ version = "0.1.0"
 authors = ["Stan Drozd <drozdziak1@gmail.com>"]
 
 [dependencies]
-rand = "*"
-time = "*"
-rust-crypto = "*"
-base64 = "*"
+rand = "*"		# temp_converter tests, sdencrypt key generation
+time = "*"		# y2sec
+rust-crypto = "*" 	# For sdencrypt
+base64 = "*" 		# Same
+rpassword = "*" 	# Same
 
 
 [[bin]]
