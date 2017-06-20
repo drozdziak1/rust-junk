@@ -7,6 +7,9 @@ use crypto::aessafe::*;
 use crypto::scrypt;
 use rand::os::OsRng;
 use rand::Rng;
+use std::io;
+use std::io::Read;
+use std::cmp::Ordering;
 
 
 //TODO: Chop main into smaller functions
@@ -43,27 +46,38 @@ pub fn main() {
         pass.chars().nth(pass.len() - 1).unwrap()
     );
 
-    // default scrypt params
+    // Default scrypt params
     let params = scrypt::ScryptParams::new(14, 8, 1);
 
-    let mut key: [u8; 16] = [0; 16];
+    let mut key: [u8; 32] = [0; 32];
 
     scrypt::scrypt(pass.as_bytes(), b"", &params, &mut key);
 
     let encryptor = AesSafe256Encryptor::new(&key);
-    println!("Block size: {}", encryptor.block_size());
 
-    print!("Key:\t\t");
-    for byte in key.iter() {
+    let mut input: Vec<u8> = vec![0; 0];
+
+    println!("Give me up to 16 characters (Press Ctrl+D when you're done):");
+    let bytes_read = match io::stdin().read_to_end(&mut input) {
+        Err(e) => panic!("Could not read input! ({:#?})", e),
+        Ok(n) => {
+            println!("\nRead {} bytes", n);
+            n
+        }
+    };
+
+    input.resize(encryptor.block_size(), 0x00u8);
+
+    println!("Read {} blocks", bytes_read / encryptor.block_size());
+
+    print!("Input:\t\t");
+    for byte in input.iter() {
         print!("{:02X} ", byte);
     }
     print!("\n");
 
-    let mut input: Vec<u8> = vec![0; 16];
-    input[..4].clone_from_slice("dupa".as_bytes());
-
-    print!("Input:\t\t");
-    for byte in input.iter() {
+    print!("Key:\t\t");
+    for byte in key.iter() {
         print!("{:02X} ", byte);
     }
     print!("\n");
