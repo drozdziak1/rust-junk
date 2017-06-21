@@ -2,6 +2,8 @@ extern crate crypto;
 extern crate rand;
 extern crate rpassword;
 
+mod pkcs7;
+
 use crypto::symmetriccipher::*;
 use crypto::aessafe::*;
 use crypto::scrypt;
@@ -11,67 +13,8 @@ use std::io;
 use std::io::Read;
 use std::process;
 
+use pkcs7::*;
 
-// PKCS#7 padding
-fn pad_pkcs7(data: &mut Vec<u8>, block_size: usize) {
-    let len = data.len();
-    let bytes_occupied = len % block_size;
-    if bytes_occupied != 0 {
-        let pad_bytes_count = block_size - bytes_occupied;
-        data.resize(len + pad_bytes_count, pad_bytes_count as u8);
-    } else {
-        data.append(&mut vec![0; 16]);
-    }
-}
-
-// PKCS#7 unpadding (leaves data intact on malformed padding)
-fn unpad_pkcs7(data: &mut Vec<u8>, block_size: usize) -> Result<(), String> {
-    let len = data.len();
-
-    if len % block_size != 0 {
-        return Err(format!(
-            "Unaligned data! (length {} not divisible by block size {})",
-            len,
-            block_size
-        ));
-    }
-
-    match data.pop() {
-        // The extra block case
-        Some(0) => {
-            // See if the remaining (block_size - 1) bytes are also 0
-            for _ in 0..(block_size - 1) {
-                if let Some(popped) = data.pop() {
-                    if popped != 0 {
-                        // Restore last pop along with the one at match start
-                        data.push(0);
-                        data.push(popped);
-                        return Err(String::from("Malformed extra null block"));
-                    }
-                }
-            }
-        }
-        Some(n) => {
-            if n >= block_size as u8 {
-                data.push(n);
-                return Err(String::from("Malformed padding bytes are out of bounds"));
-            }
-            for _ in 0..(n - 1) {
-                if let Some(popped) = data.pop() {
-                    if popped != n {
-                        // Restore last pop along with the one at match start
-                        data.push(n);
-                        data.push(popped);
-                        return Err(String::from("Malformed padding bytes are inconsistent"));
-                    }
-                }
-            }
-        }
-        None => return Err(String::from("Empty vector")),
-    }
-
-    Ok(())
-}
 
 //TODO: Chop main into smaller functions
 pub fn main() {
@@ -194,8 +137,8 @@ pub fn main() {
     }
     print!("\n");
 
-    if let Err(msg) = unpad_pkcs7(&mut decrypted, block_size) {
-        println!("Error: {}", msg);
+    if let Err(_) = unpad_pkcs7(&mut decrypted, block_size) {
+        println!("Malformed ciphertext padding! Exiting...");
         process::exit(1);
     }
     println!("Decrypted (unpadded):");
