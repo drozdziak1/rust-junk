@@ -7,9 +7,9 @@ mod pkcs7;
 use crypto::symmetriccipher::*;
 use crypto::aessafe::*;
 use crypto::scrypt;
-use std::io;
+
+use std::{io, process};
 use std::io::Read;
-use std::process;
 
 use pkcs7::*;
 
@@ -27,7 +27,14 @@ pub fn main() {
     let mut pass: String;
     loop {
         pass = match rpassword::prompt_password_stderr("Choose a password: ") {
-            Ok(input) => input,
+            Ok(input) => {
+                if input.len() < 5 {
+                    println!("Your password's length is less than 5, please try something longer!");
+                    continue;
+                } else {
+                    input
+                }
+            },
             Err(_) => {
                 println!("Something's wrong with your input. Please try again!");
                 continue;
@@ -41,11 +48,6 @@ pub fn main() {
                 continue;
             }
         };
-
-        if pass.len() < 5 {
-            println!("Your password's length is less than 5, please try something longer!");
-            continue;
-        }
 
         if pass == confirm {
             break;
@@ -126,7 +128,7 @@ pub fn main() {
     }
 
     if let Ok(s) = String::from_utf8(decrypted.clone()) {
-        println!("Decrypted (raw_text):");
+        println!("Decrypted (raw text):");
         println!("{}", s);
     } else {
         println!("The decrypted bytes don't make sense in utf-8");
