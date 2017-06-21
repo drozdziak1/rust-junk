@@ -6,14 +6,8 @@ pub enum UnpaddingError {
     /// `length % block_size != 0`
     InputNotAligned,
 
-    /// At least one byte in the extra null block isn't 0x00
-    NullBlockInconsistent,
-
-    /// The implied padding byte count is bigger than `block_size - 1`
-    PaddingBytesOutOfBounds,
-
     /// At least one padding byte isn't equal to padding length
-    PaddingBytesIncosistent,
+    InvalidPadding,
 }
 
 /// PKCS#7 padding
@@ -49,16 +43,17 @@ pub fn unpad_pkcs7(data: &mut Vec<u8>, block_size: usize) -> Result<(), Unpaddin
                         // Restore all popped bytes
                         popped_bytes.reverse();
                         data.extend_from_slice(&mut popped_bytes);
-                        return Err(UnpaddingError::NullBlockInconsistent);
+                        return Err(UnpaddingError::InvalidPadding);
                     }
                 }
             }
         }
         Some(n) => {
             popped_bytes.push(n);
+            // Err if last byte is not sane
             if n >= block_size as u8 {
                 data.push(n);
-                return Err(UnpaddingError::PaddingBytesOutOfBounds);
+                return Err(UnpaddingError::InvalidPadding);
             }
             // See if the remaining (n - 1) bytes are also n
             for _ in 0..(n - 1) {
@@ -68,7 +63,7 @@ pub fn unpad_pkcs7(data: &mut Vec<u8>, block_size: usize) -> Result<(), Unpaddin
                         // Restore all popped bytes
                         popped_bytes.reverse();
                         data.extend_from_slice(&mut popped_bytes);
-                        return Err(UnpaddingError::PaddingBytesIncosistent);
+                        return Err(UnpaddingError::InvalidPadding);
                     }
                 }
             }
@@ -81,8 +76,13 @@ pub fn unpad_pkcs7(data: &mut Vec<u8>, block_size: usize) -> Result<(), Unpaddin
 
 #[cfg(test)]
 mod tests {
+
+    extern crate rand;
+
+    use rand::Rng;
     use super::*;
     use UnpaddingError::*;
+    use std::u8;
 
     #[test]
     fn input_not_aligned_unpad_test() {
@@ -114,19 +114,19 @@ mod tests {
     }
 
     #[test]
-    fn inconsistent_null_block_unpad_test() {
+    fn invalid_null_block_unpad_test() {
         let block_size = 16;
 
         for i in 0..(block_size - 1) {
-            let mut inconsistent: Vec<u8> = vec![0u8; block_size];
-            inconsistent[i] = 1u8;
-            let mut inconsistent_cpy = inconsistent.clone();
+            let mut invalid: Vec<u8> = vec![0u8; block_size];
+            invalid[i] = 1u8;
+            let mut invalid_cpy = invalid.clone();
 
-            if let Err(e) = unpad_pkcs7(&mut inconsistent_cpy, block_size) {
-                assert_eq!(e, NullBlockInconsistent);
-                assert_eq!(inconsistent_cpy, inconsistent);
+            if let Err(e) = unpad_pkcs7(&mut invalid_cpy, block_size) {
+                assert_eq!(e, InvalidPadding);
+                assert_eq!(invalid_cpy, invalid);
             } else {
-                panic!("Got Ok() for inconsistent input");
+                panic!("Got Ok() for invalid input");
             }
         }
     }
@@ -153,8 +153,68 @@ mod tests {
     }
 
     #[test]
-    fn inconsistent_normal_block_unpad_test() {
+    fn invalid_normal_block_unpad_test() {
+        let block_size: usize = 16;
+
+        let mut generator = rand::thread_rng();
+
+        for i in 2..block_size {
+            let bytes_occupied = block_size - i;
+
+            // Pick a byte that won't match the padding and fit in bounds
+            let mut faulty_byte: u8;
+            loop {
+                faulty_byte = generator.gen_range(0, (block_size - 1) as u8);
+                if faulty_byte != i as u8 {
+                    break;
+                }
+            }
+
+            // Properly pad i vacant bytes
+            let mut invalid = vec![0u8; bytes_occupied];
+            pad_pkcs7(&mut invalid, block_size);
+
+            let faulty_index = generator.gen_range(bytes_occupied, block_size - 1);
+
+            invalid[faulty_index] = faulty_byte;
+
+            let mut invalid_cpy = invalid.clone();
+
+            if let Err(e) = unpad_pkcs7(&mut invalid_cpy, block_size) {
+                assert_eq!(invalid_cpy, invalid);
+                assert_eq!(e, InvalidPadding);
+            } else {
+                panic!("Got an Ok() for invalid input!");
+            }
+
+            // test same index with a value out of bounds
+            invalid[faulty_index] += block_size as u8;
+
+            invalid_cpy = invalid.clone();
+
+            if let Err(e) = unpad_pkcs7(&mut invalid_cpy, block_size) {
+                assert_eq!(invalid_cpy, invalid);
+                assert_eq!(e, InvalidPadding);
+            } else {
+                panic!("Got an Ok() for invalid input!");
+            }
+
+        }
+
+    }
+
+    #[test]
+    fn empty_unpad_test() {
         let block_size = 16;
 
+        let empty = vec![0u8; 0];
+        let mut empty_cpy = empty.clone();
+
+        if let Err(e) = unpad_pkcs7(&mut empty_cpy, block_size) {
+            assert_eq!(e, InputIsEmpty);
+            assert_eq!(empty_cpy, empty);
+        } else {
+            panic!("Got Ok() for empty input");
+        }
     }
 }

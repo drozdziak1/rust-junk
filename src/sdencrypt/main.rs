@@ -7,16 +7,21 @@ mod pkcs7;
 use crypto::symmetriccipher::*;
 use crypto::aessafe::*;
 use crypto::scrypt;
-use rand::os::OsRng; // For salt
-use rand::Rng;
 use std::io;
 use std::io::Read;
 use std::process;
 
 use pkcs7::*;
 
+fn pretty_print_hex(data: &[u8], bytes_per_line: usize) {
+    for chunk in data.chunks(bytes_per_line) {
+        for byte in chunk.iter() {
+            print!("{:02X} ", byte);
+        }
+        print!("\n");
+    }
+}
 
-//TODO: Chop main into smaller functions
 pub fn main() {
 
     let mut pass: String;
@@ -37,6 +42,11 @@ pub fn main() {
             }
         };
 
+        if pass.len() < 5 {
+            println!("Your password's length is less than 5, please try something longer!");
+            continue;
+        }
+
         if pass == confirm {
             break;
         } else {
@@ -50,7 +60,6 @@ pub fn main() {
         pass.chars().nth(pass.len() - 1).unwrap()
     );
 
-    // TODO: Probably gonna want a vector here
     let mut key: [u8; 32] = [0; 32];
 
     // Default scrypt params: 14, 8, 1
@@ -61,7 +70,7 @@ pub fn main() {
     let block_size = encryptor.block_size();
 
     let mut input: Vec<u8> = vec![0; 0];
-    println!("Input the data to encrypt:");
+    println!("Input the data to encrypt (press Ctrl+D when you're done):");
     let bytes_read = match io::stdin().read_to_end(&mut input) {
         Err(e) => panic!("Could not read input! ({:#?})", e),
         Ok(n) => {
@@ -71,34 +80,18 @@ pub fn main() {
     };
     println!(" ({} whole blocks)", bytes_read / block_size);
 
-    // TODO: byte dumping function
-    println!("Plaintext (unpadded):");
-    for chunk in input.chunks(block_size) {
-        for byte in chunk.iter() {
-            print!("{:02X} ", byte);
-        }
-        print!("\n");
-    }
+    println!("Plain bytes (unpadded):");
+    pretty_print_hex(&input, block_size);
     print!("\n");
 
     pad_pkcs7(&mut input, block_size);
 
-    println!("Plaintext (padded):");
-    for chunk in input.chunks(block_size) {
-        for byte in chunk.iter() {
-            print!("{:02X} ", byte);
-        }
-        print!("\n");
-    }
+    println!("Plain bytes (padded):");
+    pretty_print_hex(&input, block_size);
     print!("\n");
 
     println!("Key:");
-    for chunk in key.chunks(block_size) {
-        for byte in chunk {
-            print!("{:02X} ", byte);
-        }
-        print!("\n");
-    }
+    pretty_print_hex(&key, block_size);
     print!("\n");
 
     let mut encrypted: Vec<u8> = vec![0; 0];
@@ -110,12 +103,7 @@ pub fn main() {
     }
 
     println!("Encrypted:");
-    for chunk in encrypted.chunks(block_size) {
-        for byte in chunk.iter() {
-            print!("{:02X} ", byte);
-        }
-        print!("\n");
-    }
+    pretty_print_hex(&encrypted, block_size);
     print!("\n");
 
     let decryptor = AesSafe256Decryptor::new(&key);
@@ -129,25 +117,20 @@ pub fn main() {
     }
 
     println!("Decrypted (padded):");
-    for chunk in decrypted.chunks(block_size) {
-        for byte in chunk.iter() {
-            print!("{:02X} ", byte);
-        }
-        print!("\n");
-    }
+    pretty_print_hex(&decrypted, block_size);
     print!("\n");
 
     if let Err(_) = unpad_pkcs7(&mut decrypted, block_size) {
         println!("Malformed ciphertext padding! Exiting...");
         process::exit(1);
     }
-    println!("Decrypted (unpadded):");
-    for chunk in decrypted.chunks(block_size) {
-        for byte in chunk.iter() {
-            print!("{:02X} ", byte);
-        }
-        print!("\n");
-    }
-    print!("\n");
 
+    if let Ok(s) = String::from_utf8(decrypted.clone()) {
+        println!("Decrypted (raw_text):");
+        println!("{}", s);
+    } else {
+        println!("The decrypted bytes don't make sense in utf-8");
+        println!("Decrypted (unpadded):");
+        pretty_print_hex(&decrypted, block_size);
+    }
 }
