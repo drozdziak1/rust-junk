@@ -1,8 +1,10 @@
 extern crate rusqlite;
+extern crate time;
 
 use rusqlite::Connection;
 use std::{env, process, io};
 use io::Write;
+use time::Timespec;
 
 fn main() {
     if env::args().len() < 2 {
@@ -16,25 +18,58 @@ fn main() {
     let mut db_path = String::new();
 
     if let Some(arg) = env::args().nth(1) {
-        println!("Next: {}", arg);
+        println!("Looking into database {}", arg);
         db_path = arg;
     }
 
-    let connection = match Connection::open_with_flags(db_path, rusqlite::SQLITE_OPEN_READ_ONLY) {
-        Ok(conn) => conn,
-        Err(e) => {
+    let connection = Connection::open_with_flags(db_path, rusqlite::SQLITE_OPEN_READ_ONLY)
+        .unwrap_or_else(|e| {
             writeln!(
                 &mut io::stderr(),
                 "There was a problem when connecting to your db: {:#?}",
                 e
             ).expect("Could not write to stderr");
             process::exit(1);
-        }
+        });
+
+    // Prepare a "last 10 visited websites" query
+    let mut stmt = match connection.prepare(
+        "
+    SELECT * FROM moz_places
+    ORDER BY last_visit_date DESC
+    LIMIT 10
+    ",
+    ) {
+        Ok(stmt) => stmt,
+        Err(e) => panic!("Error! {:#?}", e),
     };
 
-    match connection.execute("SELECT * FROM sqlite_sequence", &[]) {
-        Ok(result) => println!("Result {:#?}", result),
-        Err(e) => println!("Got error {:#?}", e),
-    };
+    // Execute
+    let mut rows = stmt.query(&[]).unwrap_or_else(|e| {
+        writeln!(&mut io::stderr(), "Query error: {:#?}", e).expect("Could not write to stderr");
+        process::exit(1);
+    });
 
+    // Work with the results
+    let mut i = 1;
+    while let Some(Ok(row)) = rows.next() {
+        let url: String = row.get("url");
+
+        // Account for sites with empty titles
+        let title: String = match row.get_checked("title") {
+            Ok(t) => t,
+            Err(_) => String::from("<no title>"),
+        };
+
+        // Break down the microseconds stored in last_visit_date
+        let visit_date_usec: i64 = row.get("last_visit_date");
+        let visit_date = &time::at(Timespec::new(visit_date_usec / 1_000_000, 0));
+        let visit_date_str = time::strftime("%Y-%m-%d %H:%M:%S", visit_date)
+            .unwrap_or_else(|_| String::from("Invalid visit date"));
+
+        println!("#{}\nTitle: {:?}", i, title);
+        println!("URL: {:?}", url);
+        println!("Visit Date: {:?}\n", visit_date_str);
+        i += 1;
+    }
 }
