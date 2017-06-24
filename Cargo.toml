@@ -27,3 +27,7 @@ path = "src/ff_stats/main.rs"
 [[bin]]
 name = "sdencrypt"
 path = "src/sdencrypt/main.rs"
+
+[[bin]]
+name = "fizzbuzz"
+path = "src/fizzbuzz/main.rs"
