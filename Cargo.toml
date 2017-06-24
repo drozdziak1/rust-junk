@@ -5,7 +5,7 @@ authors = ["Stan Drozd <drozdziak1@gmail.com>"]
 
 [dependencies]
 rand = "*"		# temp_converter tests, sdencrypt key generation
-time = "*"		# y2sec
+time = "*"		# y2sec, ff_stats
 rust-crypto = "*" 	# sdencrypt
 base64 = "*" 		# Same
 rpassword = "*" 	# Same
@@ -31,3 +31,7 @@ path = "src/sdencrypt/main.rs"
 [[bin]]
 name = "fizzbuzz"
 path = "src/fizzbuzz/main.rs"
+
+[[bin]]
+name = "rps"
+path = "src/rock_paper_scissors/main.rs"
