@@ -3,45 +3,13 @@ use io::Write;
 use cmp::Ordering;
 
 extern crate rand;
-
 use rand::*;
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-enum RPS {
-    Rock,
-    Paper,
-    Scissors,
-}
+mod rps;
+use rps::RPS;
 use RPS::*;
 
-impl PartialOrd for RPS {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        match *self {
-            Rock if *other == Scissors => Some(Ordering::Greater),
-            Rock if *other == Paper => Some(Ordering::Less),
-
-            Paper if *other == Rock => Some(Ordering::Greater),
-            Paper if *other == Scissors => Some(Ordering::Less),
-
-            Scissors if *other == Paper => Some(Ordering::Greater),
-            Scissors if *other == Rock => Some(Ordering::Less),
-
-            _ if *self == *other => Some(Ordering::Equal),
-
-            _ => {
-                // None doesn't make sense anyway
-                panic!(
-                    "Cannot handle variant ordering {:?} vs. {:?}, please handle this case",
-                    self,
-                    other
-                )
-            }
-        }
-    }
-}
-
 fn main() {
-    let variants = &[Rock, Paper, Scissors];
     let mut generator = rand::thread_rng();
 
     let player_choice: RPS = if env::args().len() != 2 {
@@ -50,7 +18,7 @@ fn main() {
             "Argument count doesn't add up, choosing randomly..."
         ).expect("Could not write to stderr");
 
-        *generator.choose(variants).unwrap()
+        generator.gen()
     } else {
         match env::args().nth(1).unwrap().to_lowercase().as_str() {
             "rock" => Rock,
@@ -64,7 +32,7 @@ fn main() {
         }
     };
 
-    let cpu_choice = *generator.choose(variants).unwrap();
+    let cpu_choice: RPS = generator.gen();
 
     println!("Player: {:?}", player_choice);
     println!("CPU: {:?}", cpu_choice);
