@@ -1,9 +1,10 @@
+use std::{env, io, process, cmp};
+use io::Write;
+use cmp::Ordering;
+
 extern crate rand;
 
-use std::{env, io, process};
-use std::io::Write;
 use rand::*;
-use std::cmp::Ordering;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 enum RPS {
@@ -27,8 +28,8 @@ impl PartialOrd for RPS {
 
             _ if *self == *other => Some(Ordering::Equal),
 
-            // None doesn't make sense anyway
             _ => {
+                // None doesn't make sense anyway
                 panic!(
                     "Cannot handle variant ordering {:?} vs. {:?}, please handle this case",
                     self,
@@ -70,8 +71,20 @@ fn main() {
     print!("\n");
 
     match player_choice.partial_cmp(&cpu_choice).unwrap() {
-        Ordering::Less => println!("CPU wins ({:?} superior to {:?})", cpu_choice, player_choice),
-        Ordering::Equal => println!("It's a tie! (got two {:?} variants)", player_choice),
-        Ordering::Greater => println!("Player wins ({:?} superior to {:?})", player_choice, cpu_choice),
+        Ordering::Less => {
+            println!(
+                "CPU wins ({:?} superior to {:?})",
+                cpu_choice,
+                player_choice
+            )
+        }
+        Ordering::Equal => println!("It's a tie! (got {:?} from both)", player_choice),
+        Ordering::Greater => {
+            println!(
+                "Player wins ({:?} superior to {:?})",
+                player_choice,
+                cpu_choice
+            )
+        }
     };
 }
