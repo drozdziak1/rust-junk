@@ -5,11 +5,13 @@ use rand::*;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum RPS {
-    Rock = 0,
-    Paper = 1,
-    Scissors = 2,
+    Rock,
+    Paper,
+    Scissors,
+
+    /* For the count to work, it has to always be *the last* variant */
+    VariantCount
 }
-static VARIANT_COUNT: isize = 3;
 use RPS::*;
 
 impl PartialOrd for RPS {
@@ -28,11 +30,7 @@ impl PartialOrd for RPS {
 
             _ => {
                 // None doesn't make sense anyway
-                panic!(
-                    "Ordering {:?} vs. {:?} not implemented",
-                    self,
-                    other
-                )
+                panic!("Ordering {:?} vs. {:?} not implemented", self, other)
             }
         }
     }
@@ -40,12 +38,11 @@ impl PartialOrd for RPS {
 
 impl Rand for RPS {
     fn rand<R: Rng>(rng: &mut R) -> Self {
-        match rng.gen_range(0 as isize, VARIANT_COUNT) {
-            0 => Rock,
-            1 => Paper,
-            2 => Scissors,
+        match rng.gen_range(0 as isize, VariantCount as isize) {
+            n if n == (Rock as isize) => Rock,
+            n if n == (Paper as isize) => Paper,
+            n if n == (Scissors as isize) => Scissors,
             n => panic!("Undefined RPS variant {} not implemented!", n),
         }
     }
 }
-
