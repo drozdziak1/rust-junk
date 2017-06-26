@@ -35,3 +35,7 @@ path = "src/fizzbuzz/main.rs"
 [[bin]]
 name = "rps"
 path = "src/rock_paper_scissors/main.rs"
+
+[[bin]]
+name = "collatz"
+path = "src/collatz/main.rs"
