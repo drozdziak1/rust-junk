@@ -1,6 +1,8 @@
 extern crate rusqlite;
 extern crate time;
 
+mod reports;
+
 use rusqlite::Connection;
 use std::{env, process, io};
 use io::Write;
@@ -33,23 +35,7 @@ fn main() {
         });
 
     // Prepare a "last 10 visited websites" query
-    let mut stmt = match connection.prepare(
-        "
-    SELECT * FROM moz_places
-    ORDER BY last_visit_date DESC
-    LIMIT 10
-    ",
-    ) {
-        Ok(stmt) => stmt,
-        Err(e) => panic!("Error! {:#?}", e),
-    };
-
-    // Execute
-    let mut rows = stmt.query(&[]).unwrap_or_else(|e| {
-        writeln!(&mut io::stderr(), "Query error: {:#?}", e).expect("Could not write to stderr");
-        process::exit(1);
-    });
-
+    let mut rows = reports::report_ten_last_visited(&connection);
     // Work with the results
     let mut i = 1;
     while let Some(Ok(row)) = rows.next() {
