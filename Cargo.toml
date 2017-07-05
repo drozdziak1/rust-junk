@@ -39,3 +39,11 @@ path = "src/rock_paper_scissors/main.rs"
 [[bin]]
 name = "collatz"
 path = "src/collatz/main.rs"
+
+[[bin]]
+name = "chatserv"
+path = "src/chat/server/main.rs"
+
+[[bin]]
+name = "chatclient"
+path = "src/chat/client/main.rs"
