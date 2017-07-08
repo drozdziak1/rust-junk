@@ -1,28 +1,26 @@
 extern crate rusqlite;
-extern crate time;
 
-use std::{process, io};
+use rusqlite::{Connection, Statement};
+use io;
 use io::Write;
+use std::process;
 
-use rusqlite::{Connection, Rows};
-use time::Timespec;
+// A "last 10 visited websites" query
+pub fn ten_last_visits<'a>(conn: &'a Connection) -> Statement {
 
-pub fn report_ten_last_visited<'a>(conn: &'a Connection) -> Rows {
-
-    let mut stmt = match conn.prepare(
-        "
+    conn.prepare(
+            "
     SELECT * FROM moz_places
     ORDER BY last_visit_date DESC
     LIMIT 10
     ",
-    ) {
-        Ok(stmt) => stmt,
-        Err(e) => panic!("Error! {:#?}", e),
-    };
-
-    // Execute and return
-    stmt.query(&[]).unwrap_or_else(|e| {
-        writeln!(&mut io::stderr(), "Query error: {:#?}", e).expect("Could not write to stderr");
-        process::exit(1);
-    })
+        )
+        .unwrap_or_else(|e| {
+            writeln!(
+                &mut io::stderr(),
+                "Failed to connect to your database (caught {:?})",
+                e
+            ).expect("Could not write to stderr");
+            process::exit(1);
+        })
 }

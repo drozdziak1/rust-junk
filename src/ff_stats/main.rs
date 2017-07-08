@@ -34,8 +34,12 @@ fn main() {
             process::exit(1);
         });
 
-    // Prepare a "last 10 visited websites" query
-    let mut rows = reports::report_ten_last_visited(&connection);
+    let mut rows = reports::ten_last_visits(&connection);
+    let mut rows = rows.query(&[]).unwrap_or_else(|e| {
+        writeln!(&mut io::stderr(), "Query error: {:#?}", e).expect("Could not write to stderr");
+        process::exit(1);
+    });
+
     // Work with the results
     let mut i = 1;
     while let Some(Ok(row)) = rows.next() {

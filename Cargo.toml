@@ -6,11 +6,15 @@ authors = ["Stan Drozd <drozdziak1@gmail.com>"]
 [dependencies]
 rand = "*"		# temp_converter tests, sdencrypt key generation
 time = "*"		# y2sec, ff_stats
-rust-crypto = "*" 	# sdencrypt
-base64 = "*" 		# Same
-rpassword = "*" 	# Same
+rust-crypto = "*"	# sdencrypt
+base64 = "*"		# Same
+rpassword = "*"		# Same
 rusqlite = "*"		# ff_stats
 
+# chat
+futures = "*"
+futures-cpupool = "*"
+tokio-timer = "*"
 
 [[bin]]
 name = "temp_converter"
@@ -39,3 +43,11 @@ path = "src/rock_paper_scissors/main.rs"
 [[bin]]
 name = "collatz"
 path = "src/collatz/main.rs"
+
+[[bin]]
+name = "chatserv"
+path = "src/chat/server/main.rs"
+
+[[bin]]
+name = "chatclient"
+path = "src/chat/client/main.rs"
