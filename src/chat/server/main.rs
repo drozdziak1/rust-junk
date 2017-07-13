@@ -30,6 +30,8 @@ impl Decoder for LineCodec {
                 Ok(s) => Ok(Some(s.to_string())),
                 Err(_) => Err(io::Error::new(io::ErrorKind::Other, "invalid UTF-8")),
             }
+        } else {
+            Ok(None)
         }
     }
 }
