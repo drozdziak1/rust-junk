@@ -6,12 +6,17 @@ extern crate tokio_service;
 
 use std::io;
 use std::str;
+
 use bytes::BytesMut;
 
-use tokio_io::codec::{Encoder, Decoder};
-use tokio_proto::pipeline::ServerProto;
-use tokio_io::{AsyncRead, AsyncWrite};
+use futures::{future, Future, BoxFuture};
+
 use tokio_io::codec::Framed;
+use tokio_io::codec::{Encoder, Decoder};
+use tokio_io::{AsyncRead, AsyncWrite};
+use tokio_proto::TcpServer;
+use tokio_proto::pipeline::ServerProto;
+use tokio_service::Service;
 
 pub struct LineCodec;
 
@@ -60,4 +65,25 @@ impl<T: AsyncRead + AsyncWrite + 'static> ServerProto<T> for LineProto { type Re
     }
 }
 
-fn main() {}
+pub struct Echo;
+
+impl Service for Echo {
+    type Request = String;
+    type Response = String;
+
+    type Error = io::Error;
+
+    type Future = BoxFuture<Self::Response, Self::Error>;
+
+    fn call(&self, req: Self::Request) -> Self::Future {
+        future::ok(req).boxed()
+    }
+}
+
+fn main() {
+    let addr = "0.0.0.0:12345".parse().unwrap();
+
+    let server = TcpServer::new(LineProto, addr);
+
+    server.serve(|| Ok(Echo));
+}
