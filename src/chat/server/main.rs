@@ -1,35 +1,61 @@
+extern crate bytes;
 extern crate futures;
-extern crate futures_cpupool;
+extern crate tokio_io;
+extern crate tokio_proto;
+extern crate tokio_service;
 
-use futures::Future;
-use futures_cpupool::CpuPool;
+use std::io;
+use std::str;
+use bytes::BytesMut;
 
+use tokio_io::codec::{Encoder, Decoder};
+use tokio_proto::pipeline::ServerProto;
+use tokio_io::{AsyncRead, AsyncWrite};
+use tokio_io::codec::Framed;
 
+pub struct LineCodec;
 
-const BIG_PRIME: u64 = 15485867;
+impl Decoder for LineCodec {
+    type Item = String;
+    type Error = io::Error;
 
-fn is_prime(num: u64) -> bool {
-    for i in 2..num {
-        if num % i == 0 { return false }
+    fn decode(&mut self, buf: &mut BytesMut) -> io::Result<Option<String>> {
+        if let Some(i) = buf.iter().position(|&b| b == b'\n') {
+
+            let line = buf.split_to(i);
+
+            buf.split_to(1);
+
+            match str::from_utf8(&line) {
+                Ok(s) => Ok(Some(s.to_string())),
+                Err(_) => Err(io::Error::new(io::ErrorKind::Other, "invalid UTF-8")),
+            }
+        }
     }
-    true
 }
 
-fn main() {
-    let pool = CpuPool::new_num_cpus();
+impl Encoder for LineCodec {
+    type Item = String;
+    type Error = io::Error;
 
-    let prime_future = pool.spawn_fn(|| {
-        let prime = is_prime(BIG_PRIME);
-
-        let res: Result<bool, ()> = Ok(prime);
-        res
-    });
-
-    println!("Created the future!");
-
-    if prime_future.wait().unwrap() {
-        println!("PRIME");
-    } else {
-        println!("NOT PRIME");
+    fn encode(&mut self, msg: String, buf: &mut BytesMut) -> io::Result<()> {
+        buf.extend(msg.as_bytes());
+        buf.extend(b"\n");
+        Ok(())
     }
 }
+
+pub struct LineProto;
+
+impl<T: AsyncRead + AsyncWrite + 'static> ServerProto<T> for LineProto { type Request = String;
+    type Response = String;
+
+    type Transport = Framed<T, LineCodec>;
+    type BindTransport = Result<Self::Transport, io::Error>;
+
+    fn bind_transport(&self, io: T) -> Self::BindTransport {
+        Ok(io.framed(LineCodec))
+    }
+}
+
+fn main() {}

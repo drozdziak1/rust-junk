@@ -12,8 +12,13 @@ rpassword = "*"		# Same
 rusqlite = "*"		# ff_stats
 
 # chat
+bytes = "*"
 futures = "*"
 futures-cpupool = "*"
+tokio-core = "*"
+tokio-io = "*"
+tokio-proto = "*"
+tokio-service = "*"
 tokio-timer = "*"
 
 [[bin]]
