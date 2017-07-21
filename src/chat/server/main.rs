@@ -11,8 +11,7 @@ use bytes::BytesMut;
 
 use futures::{future, Future, BoxFuture};
 
-use tokio_io::codec::Framed;
-use tokio_io::codec::{Encoder, Decoder};
+use tokio_io::codec::{Encoder, Decoder, Framed};
 use tokio_io::{AsyncRead, AsyncWrite};
 use tokio_proto::TcpServer;
 use tokio_proto::pipeline::ServerProto;
